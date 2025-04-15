@@ -1,0 +1,624 @@
+{% extends "donor_dashboard.html" %}
+
+{% block content %}
+<div class="donation-history">
+    <div class="section-header">
+        <h2>Your Donation History</h2>
+        <p class="subtitle">Track your lifesaving contributions</p>
+    </div>
+
+    {% if donations %}
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tint"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ count }}</h3>
+                <p>Total Donations</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-flask"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_ml }} <span>ml</span></h3>
+                <p>Blood Contributed</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ next_eligible.strftime('%b %d') if next_eligible else 'Now' }}</h3>
+                <p>Next Eligible Date</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card donation-table-card">
+        <div class="card-header">
+            <h3>Donation Records</h3>
+            <div class="card-actions">
+                <button class="btn btn-outline" onclick="printTable()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="btn btn-outline" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="donation-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Blood Group</th>
+                            <th>Quantity</th>
+                            <th>Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in donations %}
+                        <tr>
+                            <td>
+                                <div class="date-cell">
+                                    <span class="date-day">{{ donation[0].strftime('%d') }}</span>
+                                    <span class="date-month">{{ donation[0].strftime('%b') }}</span>
+                                    <span class="date-year">{{ donation[0].strftime('%Y') }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="blood-group">{{ donation[1] }}</span>
+                            </td>
+                            <td>{{ donation[2] }} <span class="unit">ml</span></td>
+                            <td>
+                                <div class="impact-badge">
+                                    <i class="fas fa-heart"></i> Saved up to {{ (donation[2] / 150)|round|int }} lives
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="eligibility-card">
+        <div class="eligibility-icon">
+            {% if next_eligible %}
+                <i class="fas fa-hourglass-half"></i>
+            {% else %}
+                <i class="fas fa-check-circle"></i>
+            {% endif %}
+        </div>
+        <div class="eligibility-content">
+            <h4>Donation Eligibility</h4>
+            {% if next_eligible %}
+                <p>You will be eligible to donate again on <strong>{{ next_eligible.strftime('%B %d, %Y') }}</strong>.</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ progress_percentage }}%"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>Last Donation</span>
+                    <span>Next Eligible</span>
+                </div>
+            {% else %}
+                <p>You are currently eligible to donate blood. Schedule your next donation today!</p>
+                <a href="{{ url_for('schedule_donation') }}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus"></i> Schedule Now
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-tint-slash"></i>
+        </div>
+        <h3>No Donations Yet</h3>
+        <p>You haven't made any blood donations yet. Start your lifesaving journey today!</p>
+        <a href="{{ url_for('schedule_donation') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Schedule Your First Donation
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .donation-history {
+        max-width: 1000px;
+    }
+    
+    .section-header {
+        margin-bottom: 2rem;
+    }
+    
+    .section-header h2 {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+        color: var(--text-secondary);
+        font-weight: 300;
+    }
+    
+    /* Stats Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--light);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: rgba(229, 57, 53, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+    
+    body.dark-mode .stat-icon {
+        background: rgba(229, 57, 53, 0.2);
+    }
+    
+    .stat-icon i {
+        color: var(--primary);
+        font-size: 1.5rem;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        color: var(--text-primary);
+    }
+    
+    .stat-content h3 span {
+        font-size: 1rem;
+        color: var(--text-secondary);
+    }
+    
+    .stat-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    /* Table Card */
+    .card {
+        background: var(--light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--gray-dark);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .card-body {
+        padding: 0;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--gray-dark);
+        color: var(--text-secondary);
+    }
+    
+    .btn-outline:hover {
+        background: var(--gray);
+        color: var(--text-primary);
+    }
+    
+    body.dark-mode .btn-outline {
+        border-color: #444;
+    }
+    
+    body.dark-mode .btn-outline:hover {
+        background: #333;
+    }
+    
+    /* Table Styles */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .donation-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .donation-table th {
+        background: var(--gray);
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--gray-dark);
+    }
+    
+    .donation-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-dark);
+        vertical-align: middle;
+        color: var(--text-primary);
+    }
+    
+    .donation-table tbody tr:hover {
+        background: var(--gray);
+    }
+    
+    .donation-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Date Cell */
+    .date-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .date-day {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .date-month {
+        font-weight: 500;
+        color: var(--primary);
+    }
+    
+    .date-year {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    /* Blood Group */
+    .blood-group {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: rgba(229, 57, 53, 0.1);
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    body.dark-mode .blood-group {
+        background: rgba(229, 57, 53, 0.2);
+    }
+    
+    .unit {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    /* Impact Badge */
+    .impact-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: rgba(46, 125, 50, 0.1);
+        color: #2e7d32;
+        font-size: 0.9rem;
+    }
+    
+    body.dark-mode .impact-badge {
+        background: rgba(46, 125, 50, 0.2);
+        color: #4caf50;
+    }
+    
+    .impact-badge i {
+        margin-right: 0.3rem;
+    }
+    
+    /* Eligibility Card */
+    .eligibility-card {
+        display: flex;
+        background: var(--light);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+    }
+    
+    .eligibility-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.5rem;
+        font-size: 1.8rem;
+    }
+    
+    .eligibility-icon .fa-hourglass-half {
+        color: #f57c00;
+    }
+    
+    .eligibility-icon .fa-check-circle {
+        color: #2e7d32;
+    }
+    
+    body.dark-mode .eligibility-icon .fa-check-circle {
+        color: #4caf50;
+    }
+    
+    .eligibility-content {
+        flex: 1;
+    }
+    
+    .eligibility-content h4 {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .eligibility-content p {
+        color: var(--text-secondary);
+    }
+    
+    .progress-container {
+        height: 8px;
+        background: var(--gray-dark);
+        border-radius: 4px;
+        margin: 1rem 0 0.5rem;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #f57c00, #2e7d32);
+        border-radius: 4px;
+    }
+    
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: var(--light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: var(--gray-dark);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Dark Mode Specific Styles */
+    body.dark-mode .card,
+    body.dark-mode .stat-card,
+    body.dark-mode .eligibility-card,
+    body.dark-mode .empty-state {
+        background: var(--light);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    body.dark-mode .donation-table th {
+        background: rgba(0, 0, 0, 0.2);
+    }
+    
+    body.dark-mode .donation-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    @media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .eligibility-card {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .eligibility-icon {
+            margin: 0 auto 1rem;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .donation-table th:nth-child(4),
+        .donation-table td:nth-child(4) {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    // Function to print the table
+    function printTable() {
+        const printContents = document.querySelector('.donation-table-card').innerHTML;
+        const originalContents = document.body.innerHTML;
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        
+        // Create print-friendly styles
+        const printStyles = `
+            <style>
+                body { 
+                    font-family: 'Poppins', sans-serif; 
+                    color: #333;
+                    background: white;
+                }
+                h1 { 
+                    color: #e53935;
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .card-header {
+                    padding: 1rem;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                .card-actions { display: none; }
+                table { width: 100%; border-collapse: collapse; }
+                th { 
+                    background: #f5f5f5; 
+                    padding: 10px; 
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+                td { 
+                    padding: 10px; 
+                    border-bottom: 1px solid #eee;
+                }
+                .date-cell {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .date-day { font-weight: bold; }
+                .date-month { color: #e53935; }
+                .blood-group {
+                    display: inline-block;
+                    padding: 3px 8px;
+                    border-radius: 20px;
+                    background: rgba(229, 57, 53, 0.1);
+                    color: #e53935;
+                }
+                .impact-badge {
+                    display: inline-flex;
+                    padding: 3px 8px;
+                    border-radius: 20px;
+                    background: rgba(46, 125, 50, 0.1);
+                    color: #2e7d32;
+                }
+            </style>
+        `;
+        
+        document.body.innerHTML = `
+            <div style="padding: 20px;">
+                <h1>My Blood Donation History</h1>
+                ${printStyles}
+                ${printContents}
+            </div>
+        `;
+        
+        window.print();
+        document.body.innerHTML = originalContents;
+        
+        // Restore dark mode if it was active
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
+        
+        location.reload();
+    }
+    
+    // Function to export as CSV
+    function exportCSV() {
+        const table = document.querySelector('.donation-table');
+        let csv = [];
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                // Get the text content and clean it up
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ');
+                data = data.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        const csvString = csv.join('\n');
+        const filename = 'blood_donation_history_' + new Date().toISOString().slice(0, 10) + '.csv';
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvString));
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Listen for dark mode changes from the parent template
+    document.addEventListener('DOMContentLoaded', function() {
+        // This assumes the dark mode toggle in the parent template
+        // adds a 'dark-mode' class to the body element
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            // The toggle already exists in the parent template
+            // We just need to make sure our component respects the current mode
+        }
+    });
+</script>
+{% endblock %}

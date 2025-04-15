@@ -1,0 +1,609 @@
+{% extends "hospital_dashboard.html" %}
+
+{% block content %}
+<div class="order-tracking">
+    <div class="section-header">
+        <h2>Order Tracking</h2>
+        <p class="subtitle">Monitor the status of your blood requests</p>
+    </div>
+    
+    {% if orders %}
+    <div class="card">
+        <div class="card-header">
+            <h3>Blood Request Orders</h3>
+            <div class="card-actions">
+                <button class="btn btn-outline" onclick="printOrders()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="btn btn-outline" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Blood Group</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                            <th>Requested On</th>
+                            <th>Fulfillment Date</th>
+                            <!-- <th>Order Status</th> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in orders %}
+                        <tr class="status-{{ row[3]|lower }}">
+                            <td><span class="order-id">#{{ row[0] }}</span></td>
+                            <td>
+                                <span class="blood-group">{{ row[1] }}</span>
+                            </td>
+                            <td>{{ row[2] }} <span class="unit">ml</span></td>
+                            <td>
+                                <span class="status-badge status-{{ row[3]|lower }}">
+                                    {{ row[3] }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="date-cell">
+                                    <span class="date-day">{{ row[4].strftime('%d') }}</span>
+                                    <span class="date-month">{{ row[4].strftime('%b') }}</span>
+                                    <span class="date-year">{{ row[4].strftime('%Y') }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if row[5] %}
+                                <div class="date-cell">
+                                    <span class="date-day">{{ row[5].strftime('%d') }}</span>
+                                    <span class="date-month">{{ row[5].strftime('%b') }}</span>
+                                    <span class="date-year">{{ row[5].strftime('%Y') }}</span>
+                                </div>
+                                {% else %}
+                                <span class="pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <!-- <td>
+                                {% if row[6] %}
+                                <div class="progress-container">
+                                    {% if row[6] == 'Pending' %}
+                                    <div class="progress-bar" style="width: 25%;"></div>
+                                    <span class="progress-text">Pending</span>
+                                    {% elif row[6] == 'Processing' %}
+                                    <div class="progress-bar" style="width: 50%;"></div>
+                                    <span class="progress-text">Processing</span>
+                                    {% elif row[6] == 'Shipped' %}
+                                    <div class="progress-bar" style="width: 75%;"></div>
+                                    <span class="progress-text">Shipped</span>
+                                    {% elif row[6] == 'Delivered' %}
+                                    <div class="progress-bar" style="width: 100%;"></div>
+                                    <span class="progress-text">Delivered</span>
+                                    {% elif row[6] == 'Cancelled' %}
+                                    <div class="progress-bar cancelled" style="width: 100%;"></div>
+                                    <span class="progress-text">Cancelled</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="pending">N/A</span>
+                                {% endif %}
+                            </td> -->
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-card">
+        <div class="info-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="info-content">
+            <h4>Order Status Information</h4>
+            <ul>
+                <li><span class="status-dot pending"></span> <strong>Pending:</strong> Your request is being reviewed</li>
+                <li><span class="status-dot processing"></span> <strong>Processing:</strong> Blood is being prepared for delivery</li>
+                <li><span class="status-dot shipped"></span> <strong>Shipped:</strong> Blood is on its way to your hospital</li>
+                <li><span class="status-dot delivered"></span> <strong>Delivered:</strong> Blood has been delivered to your hospital</li>
+                <li><span class="status-dot cancelled"></span> <strong>Cancelled:</strong> Request has been cancelled</li>
+            </ul>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <h3>No Orders Yet</h3>
+        <p>You haven't made any blood requests yet. Start by creating a new blood request.</p>
+        <a href="{{ url_for('make_request') }}" class="btn btn-primary">
+            <i class="fas fa-tint"></i> Make Blood Request
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .order-tracking {
+        max-width: 1200px;
+    }
+    
+    .section-header {
+        margin-bottom: 2rem;
+    }
+    
+    .section-header h2 {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .section-header h2::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 40px;
+        height: 4px;
+        background-color: var(--primary);
+        border-radius: 2px;
+    }
+    
+    .subtitle {
+        color: var(--text-secondary);
+        font-weight: 300;
+        margin-top: 10px;
+    }
+    
+    .card {
+        background: var(--light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: var(--transition);
+    }
+    
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--gray-dark);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--gray-dark);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: var(--transition);
+    }
+    
+    .btn-outline:hover {
+        background: var(--gray);
+        color: var(--text-primary);
+    }
+    
+    .card-body {
+        padding: 0;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .orders-table th {
+        background: var(--gray);
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+    
+    .orders-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-dark);
+        vertical-align: middle;
+    }
+    
+    .orders-table tbody tr:hover {
+        background: var(--gray);
+    }
+    
+    .orders-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .order-id {
+        font-weight: 600;
+        color: var(--primary);
+    }
+    
+    .blood-group {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: rgba(229, 57, 53, 0.1);
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    .unit {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: rgba(255, 152, 0, 0.1);
+        color: #ff9800;
+    }
+    
+    .status-approved {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+    }
+    
+    .status-rejected {
+        background: rgba(244, 67, 54, 0.1);
+        color: #f44336;
+    }
+    
+    .status-processing {
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196f3;
+    }
+    
+    .date-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .date-day {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .date-month {
+        font-weight: 500;
+        color: var(--primary);
+    }
+    
+    .date-year {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    .pending {
+        color: #ff9800;
+        font-style: italic;
+    }
+    
+    .progress-container {
+        width: 100%;
+        height: 6px;
+        background: var(--gray-dark);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #ff9800, #4caf50);
+        border-radius: 3px;
+    }
+    
+    .progress-bar.cancelled {
+        background: #f44336;
+    }
+    
+    .progress-text {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+    
+    .info-card {
+        display: flex;
+        align-items: flex-start;
+        background: var(--light);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        border-left: 4px solid var(--primary);
+        margin-top: 2rem;
+    }
+    
+    .info-icon {
+        font-size: 1.5rem;
+        color: var(--primary);
+        margin-right: 1rem;
+        padding-top: 0.2rem;
+    }
+    
+    .info-content h4 {
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        color: var(--text-primary);
+    }
+    
+    .info-content ul {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+        color: var(--text-secondary);
+    }
+    
+    .info-content li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-dot.pending {
+        background: #ff9800;
+    }
+    
+    .status-dot.processing {
+        background: #2196f3;
+    }
+    
+    .status-dot.shipped {
+        background: #9c27b0;
+    }
+    
+    .status-dot.delivered {
+        background: #4caf50;
+    }
+    
+    .status-dot.cancelled {
+        background: #f44336;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: var(--light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: var(--gray-dark);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Dark Mode Styles */
+    body.dark-mode .orders-table th {
+        background: rgba(0, 0, 0, 0.2);
+    }
+    
+    body.dark-mode .orders-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    @media (max-width: 768px) {
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .card-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .orders-table {
+            min-width: 800px;
+        }
+    }
+</style>
+
+<script>
+    // Function to print the orders table
+    function printOrders() {
+        const printContents = document.querySelector('.card').innerHTML;
+        const originalContents = document.body.innerHTML;
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        
+        // Create print-friendly styles
+        const printStyles = `
+            <style>
+                body { 
+                    font-family: 'Poppins', sans-serif; 
+                    color: #333;
+                    background: white;
+                }
+                h1, h3 { 
+                    color: #e53935;
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .card-actions { display: none; }
+                table { width: 100%; border-collapse: collapse; }
+                th { 
+                    background: #f5f5f5; 
+                    padding: 10px; 
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+                td { 
+                    padding: 10px; 
+                    border-bottom: 1px solid #eee;
+                }
+                .blood-group {
+                    display: inline-block;
+                    padding: 3px 8px;
+                    border-radius: 20px;
+                    background: rgba(229, 57, 53, 0.1);
+                    color: #e53935;
+                }
+                .status-badge {
+                    display: inline-block;
+                    padding: 3px 8px;
+                    border-radius: 20px;
+                }
+                .status-pending {
+                    background: rgba(255, 152, 0, 0.1);
+                    color: #ff9800;
+                }
+                .status-approved {
+                    background: rgba(76, 175, 80, 0.1);
+                    color: #4caf50;
+                }
+                .status-rejected {
+                    background: rgba(244, 67, 54, 0.1);
+                    color: #f44336;
+                }
+                .progress-container {
+                    width: 100%;
+                    height: 6px;
+                    background: #eee;
+                    border-radius: 3px;
+                    overflow: hidden;
+                    margin-bottom: 5px;
+                }
+                .progress-bar {
+                    height: 100%;
+                    background: linear-gradient(to right, #ff9800, #4caf50);
+                    border-radius: 3px;
+                }
+                .progress-bar.cancelled {
+                    background: #f44336;
+                }
+                .date-cell {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .date-day { font-weight: bold; }
+                .date-month { color: #e53935; }
+            </style>
+        `;
+        
+        document.body.innerHTML = `
+            <div style="padding: 20px;">
+                <h1>Blood Request Orders</h1>
+                ${printStyles}
+                ${printContents}
+            </div>
+        `;
+        
+        window.print();
+        document.body.innerHTML = originalContents;
+        
+        // Restore dark mode if it was active
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
+        
+        // Re-attach event listeners
+        document.querySelector('#darkModeToggle').addEventListener('click', toggleDarkMode);
+        document.querySelectorAll('.btn-outline')[0].addEventListener('click', printOrders);
+        document.querySelectorAll('.btn-outline')[1].addEventListener('click', exportCSV);
+    }
+    
+    // Function to export as CSV
+    function exportCSV() {
+        const table = document.querySelector('.orders-table');
+        let csv = [];
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                // Get the text content and clean it up
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ');
+                data = data.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        const csvString = csv.join('\n');
+        const filename = 'blood_request_orders_' + new Date().toISOString().slice(0, 10) + '.csv';
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvString));
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Function to toggle dark mode (reference to the existing function)
+    function toggleDarkMode() {
+        // This function is already defined in the parent template
+        // Just a reference for the re-attachment after printing
+    }
+</script>
+{% endblock %}

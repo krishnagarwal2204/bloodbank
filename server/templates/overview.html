@@ -1,0 +1,36 @@
+{% extends "donor_dashboard.html" %}
+
+{% block content %}
+<h2>Welcome, {{ donor[0] }}</h2>
+
+<div style="margin-top: 20px;">
+    <h3>Your Information</h3>
+    <p><strong>Email:</strong> {{ donor[1] }}</p>
+    <p><strong>Phone:</strong> {{ donor[2] }}</p>
+    <p><strong>Blood Group:</strong> {{ donor[3] }}</p>
+    <p><strong>Date of Birth:</strong> {{ donor[4] }}</p>
+    <p><strong>Last Donation Date:</strong> 
+        {% if donor[5] %}
+            {{ donor[5].strftime('%Y-%m-%d') }}
+        {% else %}
+            Not yet donated
+        {% endif %}
+    </p>
+</div>
+
+<hr style="margin: 30px 0;">
+
+<div>
+    <h3>Low Stock Blood Groups</h3>
+    {% if low_stock %}
+        <ul>
+            {% for group in low_stock %}
+                <li style="color: red;">{{ group }}</li>
+            {% endfor %}
+        </ul>
+        <p>Consider referring friends with these blood types to donate!</p>
+    {% else %}
+        <p>All blood groups are sufficiently stocked.</p>
+    {% endif %}
+</div>
+{% endblock %}

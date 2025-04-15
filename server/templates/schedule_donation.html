@@ -1,0 +1,336 @@
+{% extends "donor_dashboard.html" %}
+
+{% block content %}
+<div class="schedule-donation">
+    <div class="section-header">
+        <h2>Schedule a Blood Donation</h2>
+        <p class="subtitle">Plan your next lifesaving contribution</p>
+    </div>
+
+    {% if not eligible %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i>
+        <div class="alert-content">
+            <h4>Not Eligible</h4>
+            <p>You are not eligible to donate blood yet. Please wait 3 months from your last donation date.</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('schedule_donation') }}" class="donation-form">
+                <div class="form-group">
+                    <label for="quantity_ml">Quantity to Donate (in ml)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="quantity_ml" name="quantity_ml" min="100" max="500" step="50" value="450" required>
+                        <span class="unit">ml</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" min="100" max="500" step="50" value="450" class="slider" id="quantitySlider">
+                        <div class="slider-labels">
+                            <span>100ml</span>
+                            <span>300ml</span>
+                            <span>500ml</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation_date">Preferred Date</label>
+                    <input type="date" id="donation_date" name="donation_date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation_time">Preferred Time</label>
+                    <select id="donation_time" name="donation_time" required>
+                        <option value="" disabled selected>Select a time slot</option>
+                        <option value="morning">Morning (9:00 AM - 12:00 PM)</option>
+                        <option value="afternoon">Afternoon (1:00 PM - 4:00 PM)</option>
+                        <option value="evening">Evening (5:00 PM - 8:00 PM)</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-check"></i> Schedule Donation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="info-section">
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-tint"></i>
+            </div>
+            <h4>Blood Donation Facts</h4>
+            <ul>
+                <li>One donation can save up to three lives</li>
+                <li>The average adult has about 5,000ml of blood</li>
+                <li>Your body replaces donated blood volume within 24 hours</li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if message %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <div class="alert-content">
+            <h4>Success!</h4>
+            <p>{{ message }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .schedule-donation {
+        max-width: 800px;
+    }
+    
+    .section-header {
+        margin-bottom: 2rem;
+    }
+    
+    .section-header h2 {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+        color: #666;
+        font-weight: 300;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .donation-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .donation-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #444;
+    }
+    
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    
+    .donation-form input[type="number"],
+    .donation-form input[type="date"],
+    .donation-form select {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .donation-form input:focus,
+    .donation-form select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
+    }
+    
+    .unit {
+        position: absolute;
+        right: 1rem;
+        color: #666;
+    }
+    
+    .slider-container {
+        margin-top: 1rem;
+    }
+    
+    .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 5px;
+        background: #ddd;
+        outline: none;
+        margin-bottom: 0.5rem;
+    }
+    
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--primary);
+        cursor: pointer;
+    }
+    
+    .slider-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .form-actions {
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn i {
+        margin-right: 0.5rem;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .alert i {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        margin-top: 0.2rem;
+    }
+    
+    .alert-content h4 {
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+    }
+    
+    .alert-danger {
+        background-color: #ffebee;
+        color: #c62828;
+        border-left: 4px solid #c62828;
+    }
+    
+    .alert-success {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border-left: 4px solid #2e7d32;
+    }
+    
+    .info-section {
+        margin-top: 2rem;
+    }
+    
+    .info-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid var(--primary);
+    }
+    
+    .info-icon {
+        width: 50px;
+        height: 50px;
+        background: rgba(229, 57, 53, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .info-icon i {
+        color: var(--primary);
+        font-size: 1.5rem;
+    }
+    
+    .info-card h4 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .info-card ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+    }
+    
+    .info-card li {
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quantityInput = document.getElementById('quantity_ml');
+        const quantitySlider = document.getElementById('quantitySlider');
+        
+        // Sync slider with input
+        if(quantityInput && quantitySlider) {
+            quantitySlider.addEventListener('input', function() {
+                quantityInput.value = this.value;
+            });
+            
+            quantityInput.addEventListener('input', function() {
+                quantitySlider.value = this.value;
+            });
+        }
+        
+        // Set minimum date to today
+        const dateInput = document.getElementById('donation_date');
+        if(dateInput) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+            
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+            
+            const formattedToday = yyyy + '-' + mm + '-' + dd;
+            dateInput.setAttribute('min', formattedToday);
+        }
+    });
+</script>
+{% endblock %}
